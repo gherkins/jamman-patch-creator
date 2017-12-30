@@ -1,0 +1,129 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <title>Document</title>
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <div class="col-xs-6 offset-3">
+            <p>
+                &nbsp;
+            </p>
+            <h1>
+                JamMan Patch-Creator
+            </h1>
+            <p>
+                Generate Digitech JamMan Patches<br>
+                to put on the SD w/o connecting via USB.
+            </p>
+            <form>
+                <div class="form-group">
+                    <label>Patch-No.</label>
+                    <input type="number" class="form-control" id="number" min="1" max="99" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Beats per Minute</label>
+                    <input type="number" class="form-control" id="bpm" value="90" required>
+                </div>
+                <div class="form-group">
+                    <label>Beats per Measure</label>
+                    <input type="number" class="form-control" id="measure" value="4" required>
+                </div>
+                <div class="form-group">
+                    <label>44.1kHz, 16bit Audio-File </label>
+                    <input type="file" class="form-control-file" id="file" required>
+                </div>
+                <div class="form-group">
+                    <input type="submit" class="form-control btn btn-success" id="submit"
+                           value="Download patch as .zip">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="node_modules/jszip/dist/jszip.min.js"></script>
+<script type="text/javascript" src="node_modules/jszip/vendor/FileSaver.js"></script>
+<script type="text/javascript">
+
+    $('#submit').on('click', function () {
+
+
+        var audioFile = $('#file')[0].files[0];
+
+        var patchName = 'Patch' + $('#number').val();
+
+        //build patch XML
+        var patchXmlString =
+            '<?xml version="1.0" encoding="UTF-8" ?>\n' +
+            '<JamManPatch xmlns="http://schemas.digitech.com/JamMan/Patch" device="JamManStereo" version="1">\n' +
+            '    <PatchName></PatchName>\n' +
+            '    <RhythmType>Conga</RhythmType>\n' +
+            '    <StopMode>StopInstantly</StopMode>\n' +
+            '    <SettingsVersion>1</SettingsVersion>\n' +
+            '    <ID>' + uuidv4() + '</ID>\n' +
+            '    <Metadata />\n' +
+            '</JamManPatch>';
+
+        //build phrase XML
+        var phraseXmlString =
+            '<?xml version="1.0" encoding="UTF-8" ?>\n' +
+            '<JamManPhrase xmlns="http://schemas.digitech.com/JamMan/Phrase" version="1">\n' +
+            '    <BeatsPerMinute>' + $('#bpm').val() + '</BeatsPerMinute>\n' +
+            '    <BeatsPerMeasure>' + $('#measure').val() + '</BeatsPerMeasure>\n' +
+            '    <BpmValidated>1</BpmValidated>\n' +
+            '    <IsLoop>1</IsLoop>\n' +
+            '    <IsReversed>0</IsReversed>\n' +
+            '    <SettingsVersion>1</SettingsVersion>\n' +
+            '    <AudioVersion>1</AudioVersion>\n' +
+            '    <ID>' + uuidv4() + '</ID>\n' +
+            '    <Metadata />\n' +
+            '</JamManPhrase>';
+
+        //build ZIP
+        var zip = new JSZip();
+
+        var patchFolder = zip.folder(patchName);
+        patchFolder.file("patch.xml", patchXmlString);
+
+        var phraseFolder = patchFolder.folder("PhraseA");
+        phraseFolder.file("phrase.xml", phraseXmlString);
+
+
+        fr = new FileReader();
+        fr.onload = function () {
+            phraseFolder.file('phrase.wav', fr.result, {binary: true});
+
+            zip.generateAsync({type: "blob"})
+                .then(function (content) {
+                    saveAs(content, patchName + '.zip');
+                });
+        };
+
+        fr.readAsBinaryString(audioFile);
+
+        return false;
+
+
+    });
+
+
+    function uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+
+</script>
+</body>
+</html>
