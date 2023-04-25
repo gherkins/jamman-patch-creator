@@ -13,3 +13,4 @@ node_modules/jquery/*
 node_modules/jszip/*
 !node_modules/jszip/dist
 !node_modules/jszip/vendor
+.DS_Store
